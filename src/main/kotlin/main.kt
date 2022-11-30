@@ -1,4 +1,5 @@
 fun main(args: Array<String>) {
-    TODO()
+    val z = drawBoard()
+    z.createWindow()
 }
 
