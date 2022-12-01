@@ -1,5 +1,5 @@
 fun main(args: Array<String>) {
-    val z = drawBoard()
+    val z = DrawBoard()
     z.createWindow()
 }
 

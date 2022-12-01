@@ -15,20 +15,33 @@ import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import javax.swing.WindowConstants
 
-class drawBoard {
-    fun createWindow() = runBlocking(Dispatchers.Swing){
+class DrawBoard {
+    fun createWindow() = runBlocking(Dispatchers.Swing) {
         val layer = SkiaLayer()
         SwingUtilities.invokeLater {
             val window = JFrame("Life").apply {
-                defaultCloseOperation = WindowConstants.HIDE_ON_CLOSE
-                preferredSize = Dimension(800, 800)
+                defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+                preferredSize = Dimension(1000, 720)
             }
             layer.attachTo(window.contentPane)
             layer.needRedraw()
             window.pack()
             window.isVisible = true
             window.isResizable = false
+            fieldRender(layer)
         }
 
+    }
+
+    fun fieldRender(skiaLayer: SkiaLayer) {
+        skiaLayer.skikoView = GenericSkikoView(skiaLayer, object : SkikoView {
+            override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
+                val constants = Constants()
+                canvas.drawPaint(paint = Constants.white)
+                canvas.drawLine(30f, 0f, 30f, 720f, Constants.black)
+                canvas.drawLine(0f, 30f, 720f, 30f, Constants.black)
+            }
+        }
+        )
     }
 }
