@@ -2,25 +2,24 @@ class Field {
     val field: MutableList<MutableList<Cell>> = mutableListOf()
 
     init {
-        repeat(Constants.size + 2) { field.add(mutableListOf()) }
-        repeat(Constants.size + 2) { field[it].add(Cell()) }
-        Constants.range.forEach { row ->
-            Constants.range.forEach { column ->
-                field[row][column].neighbours = listOf(
-                    field[row - 1][column - 1],
-                    field[row - 1][column],
-                    field[row - 1][column + 1],
-                    field[row][column - 1],
-                    field[row][column + 1],
-                    field[row + 1][column - 1],
-                    field[row + 1][column],
-                    field[row + 1][column + 1],
-                )
+        repeat(Constants.size + 2) { row ->
+            field.add(mutableListOf())
+            repeat(Constants.size + 2) {
+                field[row].add(Cell())
             }
         }
     }
-    fun nextCondition(cell: Cell): CONDITION {
-        val neighboursAlive = cell.neighbours.filter { neighbour -> neighbour.condition == CONDITION.ALIVE }.size
+    fun nextCondition(cell: Cell, x: Int, y: Int): CONDITION {
+        val neighbours = listOf<Cell>(
+            field[x-1][y-1],
+            field[x][y-1],
+            field[x+1][y-1],
+            field[x-1][y],
+            field[x+1][y],
+            field[x-1][y+1],
+            field[x][y+1],
+            field[x+1][y+1],)
+        val neighboursAlive = neighbours.filter { neighbour -> neighbour.condition == CONDITION.ALIVE }.size
         if (cell.condition == CONDITION.ALIVE){
             return when(neighboursAlive){
                 in Constants.lonelyDeath -> {cell.generation = 0; CONDITION.DEAD}

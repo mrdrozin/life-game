@@ -2,7 +2,6 @@ plugins {
     kotlin("jvm") version "1.5.10"
     application
 }
-
 group = "ru.spbu.math-cs"
 version = "1.0-SNAPSHOT"
 
