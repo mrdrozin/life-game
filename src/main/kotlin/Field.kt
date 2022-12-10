@@ -1,5 +1,6 @@
 class Field {
-    val field: MutableList<MutableList<Cell>> = mutableListOf()
+
+    var field: MutableList<MutableList<Cell>> = mutableListOf()
 
     init {
         repeat(Constants.size + 2) { row ->
@@ -9,25 +10,57 @@ class Field {
             }
         }
     }
-    fun nextCondition(cell: Cell, x: Int, y: Int): CONDITION {
-        val neighbours = listOf<Cell>(
-            field[x-1][y-1],
-            field[x][y-1],
-            field[x+1][y-1],
-            field[x-1][y],
-            field[x+1][y],
-            field[x-1][y+1],
-            field[x][y+1],
-            field[x+1][y+1],)
-        val neighboursAlive = neighbours.filter { neighbour -> neighbour.condition == CONDITION.ALIVE }.size
-        if (cell.condition == CONDITION.ALIVE){
-            return when(neighboursAlive){
-                in Constants.lonelyDeath -> {cell.generation = 0; CONDITION.DEAD}
-                in Constants.overpopulationDeath -> {cell.generation = 0; CONDITION.DEAD}
-                else -> {cell.generation++; CONDITION.ALIVE}
+
+    private fun nextCondition(x: Int, y: Int): Cell {
+        val cell = field[y][x]
+        val neighbours = listOf(
+            field[y - 1][x - 1],
+            field[y][x - 1],
+            field[y + 1][x - 1],
+            field[y - 1][x],
+            field[y + 1][x],
+            field[y - 1][x + 1],
+            field[y][x + 1],
+            field[y + 1][x + 1]
+        )
+        val neighboursAlive = neighbours.count { neighbour -> neighbour.condition == CONDITION.ALIVE }
+        val newCell = Cell()
+        newCell.condition = cell.condition
+        newCell.generation = cell.generation
+        if (cell.condition == CONDITION.ALIVE) {
+            when (neighboursAlive) {
+                in Constants.lonelyDeath -> {
+                    newCell.generation = 0
+                    newCell.condition = CONDITION.DEAD
+                }
+
+                in Constants.overpopulationDeath -> {
+                    newCell.generation = 0
+                    newCell.condition = CONDITION.DEAD
+                }
+
+                else -> {
+                    newCell.generation++
+                    newCell.condition = CONDITION.ALIVE
+                }
+            }
+            return newCell
+        }
+        if (neighboursAlive in Constants.birth) {
+            newCell.generation++
+                newCell.condition = CONDITION.ALIVE
+        }
+        return newCell
+    }
+
+    fun nextBoard(){
+        val newBoard = Field()
+        Constants.range.forEach { y ->
+            Constants.range.forEach { x ->
+                newBoard.field[y][x] = this.nextCondition(x, y)
             }
         }
-        if (neighboursAlive in Constants.birth) {cell.generation++; return CONDITION.ALIVE}
-        return CONDITION.DEAD
+        this.field = newBoard.field
     }
+
 }

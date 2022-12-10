@@ -57,11 +57,10 @@ class Mouse {
         }
     }
 }
-
 fun mouse(scroll: Int) {
     DrawBoard.scale = when {
         3 >= DrawBoard.scale + scroll -> 3
-        DrawBoard.scale + scroll >= 1024 -> 1024
+        DrawBoard.scale + scroll >= Constants.size -> Constants.size
         else -> DrawBoard.scale + scroll
     }
 }
@@ -85,4 +84,7 @@ fun clickCell(x: Int, y: Int, board: Field) {
             board.field[y][x].condition = CONDITION.DEAD; board.field[y][x].generation = 0
         }
     }
+}
+class Button(field: Field) {
+    val actionListener = ActionListener { field.nextBoard()}
 }

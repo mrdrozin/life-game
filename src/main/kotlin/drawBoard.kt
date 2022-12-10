@@ -17,7 +17,7 @@ import kotlin.math.ceil
 class DrawBoard {
     companion object {
         var board = Field()
-        var scale = 21
+        var scale = 20
         var centerX = Constants.size / 2
         var centerY = Constants.size / 2
         var windowWidth = 1000f
@@ -30,6 +30,7 @@ class DrawBoard {
     fun createWindow() = runBlocking(Dispatchers.Swing) {
         val layer = SkiaLayer()
         val mouse = Mouse()
+        val button = Button(board)
         layer.addMouseListener(mouse.mouseListener)
         layer.addMouseWheelListener(mouse.wheelListener)
         layer.addKeyListener(mouse.keyboardListener)
@@ -43,6 +44,7 @@ class DrawBoard {
             val but2 = JButton("restart")
             val but3 = JButton("save position")
             val but4 = JButton("generate")
+            but1.addActionListener(button.actionListener)
             gameField.add(but1)
             gameField.add(but2)
             gameField.add(but3)
@@ -74,8 +76,6 @@ class DrawBoard {
     fun fieldRender(skiaLayer: SkiaLayer) {
         skiaLayer.skikoView = GenericSkikoView(skiaLayer, object : SkikoView {
             override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
-                val X = 511
-                val Y = 511
                 val x = fieldWidth / 2
                 val y = fieldHeight / 2
                 val cellSize = fieldWidth / scale
@@ -102,8 +102,8 @@ class DrawBoard {
                         Constants.black
                     )
                 }
-                (centerX - columns / 2 - 5..centerX + columns / 2 + 5).forEach { x ->
-                    (centerY - rows / 2 - 5..centerY + rows / 2 + 5).forEach { y ->
+                (centerX - columns / 2 ..centerX + columns / 2 ).forEach { x ->
+                    (centerY - rows / 2 ..centerY + rows / 2 ).forEach { y ->
                         if (board.field[y][x].condition == CONDITION.ALIVE) {
                             canvas.drawRect(
                                 Rect.makeXYWH(
