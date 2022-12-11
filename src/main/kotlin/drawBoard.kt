@@ -22,34 +22,25 @@ class DrawBoard {
         var centerY = Constants.size / 2
         var windowWidth = 1000f
         var windowHeight = 720f
-        private const val buttonWidth = 125f
+        private const val buttonWidth = 110f
         var fieldWidth = windowWidth - buttonWidth
         var fieldHeight = windowHeight
     }
 
     fun createWindow() = runBlocking(Dispatchers.Swing) {
         val layer = SkiaLayer()
-        val mouse = Mouse()
+        val listeners = Listeners()
         val button = Button(board)
-        layer.addMouseListener(mouse.mouseListener)
-        layer.addMouseWheelListener(mouse.wheelListener)
-        layer.addKeyListener(mouse.keyboardListener)
+        layer.addMouseListener(listeners.mouseListener)
+        layer.addMouseWheelListener(listeners.wheelListener)
+        layer.addKeyListener(listeners.keyboardListener)
         SwingUtilities.invokeLater {
             val window = JFrame("Life").apply {
-                defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+                defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
                 preferredSize = Dimension(1000, 720)
             }
             val gameField = JPanel(GridLayout(4, 1))
-            val but1 = JButton("start/pause")
-            val but2 = JButton("restart")
-            val but3 = JButton("save position")
-            val but4 = JButton("generate")
-            but1.addActionListener(button.actionListener)
-            gameField.add(but1)
-            gameField.add(but2)
-            gameField.add(but3)
-            gameField.add(but4)
-            //but1.addKeyListener                          TODO
+            button.addButtons(gameField)
             layer.attachTo(window.contentPane)
             window.contentPane.add(gameField, BorderLayout.EAST)
             layer.needRedraw()
@@ -58,10 +49,13 @@ class DrawBoard {
             window.isResizable = true
             fieldRender(layer)
             window.addComponentListener(componentListener)
+            window.addWindowListener(listeners.windowListener)
         }
 
 
     }
+
+
 
     private val componentListener = object : ComponentAdapter() {
         override fun componentResized(e: ComponentEvent) {
@@ -73,50 +67,63 @@ class DrawBoard {
         }
     }
 
-    fun fieldRender(skiaLayer: SkiaLayer) {
+
+
+    private fun drawCells(canvas: Canvas, columns: Int, rows: Int, cellSize: Float) {
+        (centerX - columns / 2..centerX + columns / 2).forEach { x ->
+            (centerY - rows / 2..centerY + rows / 2).forEach { y ->
+                if (board.field[y][x].condition == CONDITION.ALIVE) {
+                    canvas.drawRect(
+                        Rect.makeXYWH(
+                            fieldWidth / 2 - cellSize / 2 - (centerX - x) * cellSize,
+                            fieldHeight / 2 - cellSize / 2 - (centerY - y) * cellSize,
+                            cellSize,
+                            cellSize
+                        ),
+                        Constants.black
+                    )
+                }
+            }
+        }
+    }
+    private fun drawColumns(canvas: Canvas, columns: Int, cellSize: Float){
+        repeat(columns / 2 + 5) {
+            canvas.drawLine(
+                fieldWidth / 2 + cellSize / 2 + it * cellSize, 0f,
+                fieldWidth / 2 + cellSize / 2 + it * cellSize, fieldHeight,
+                Constants.black
+            )
+            canvas.drawLine(
+                fieldWidth / 2 - cellSize / 2 - it * cellSize, 0f,
+                fieldWidth / 2 - cellSize / 2 - it * cellSize, fieldHeight,
+                Constants.black
+            )
+        }
+    }
+    private fun drawRows(canvas: Canvas, rows: Int, cellSize: Float){
+        repeat(rows / 2 + 5) {
+            canvas.drawLine(
+                0f, fieldHeight / 2 - cellSize / 2 - it * cellSize, fieldWidth,
+                fieldHeight / 2 - cellSize / 2 - it * cellSize,
+                Constants.black
+            )
+            canvas.drawLine(
+                0f, fieldHeight / 2 + cellSize / 2 + it * cellSize,
+                fieldWidth, fieldHeight / 2 + cellSize / 2 + it * cellSize,
+                Constants.black
+            )
+        }
+    }
+    private fun fieldRender(skiaLayer: SkiaLayer) {
         skiaLayer.skikoView = GenericSkikoView(skiaLayer, object : SkikoView {
             override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
-                val x = fieldWidth / 2
-                val y = fieldHeight / 2
                 val cellSize = fieldWidth / scale
-                Mouse.cellSize = cellSize
+                Listeners.cellSize = cellSize
                 val rows = ceil(fieldHeight / cellSize).toInt()
                 val columns = ceil(fieldWidth / cellSize).toInt()
-                repeat(rows / 2 + 5) {
-                    canvas.drawLine(
-                        0f, y - cellSize / 2 - it * cellSize, fieldWidth, y - cellSize / 2 - it * cellSize,
-                        Constants.black
-                    )
-                    canvas.drawLine(
-                        0f, y + cellSize / 2 + it * cellSize, fieldWidth, y + cellSize / 2 + it * cellSize,
-                        Constants.black
-                    )
-                }
-                repeat(columns / 2 + 5) {
-                    canvas.drawLine(
-                        x + cellSize / 2 + it * cellSize, 0f, x + cellSize / 2 + it * cellSize, fieldHeight,
-                        Constants.black
-                    )
-                    canvas.drawLine(
-                        x - cellSize / 2 - it * cellSize, 0f, x - cellSize / 2 - it * cellSize, fieldHeight,
-                        Constants.black
-                    )
-                }
-                (centerX - columns / 2 ..centerX + columns / 2 ).forEach { x ->
-                    (centerY - rows / 2 ..centerY + rows / 2 ).forEach { y ->
-                        if (board.field[y][x].condition == CONDITION.ALIVE) {
-                            canvas.drawRect(
-                                Rect.makeXYWH(
-                                    fieldWidth / 2 - cellSize / 2 - (centerX - x) * cellSize,
-                                    fieldHeight / 2 - cellSize / 2 - (centerY - y) * cellSize,
-                                    cellSize,
-                                    cellSize
-                                ),
-                                Constants.black
-                            )
-                        }
-                    }
-                }
+                drawRows(canvas, rows, cellSize)
+                drawColumns(canvas, columns, cellSize)
+                drawCells(canvas, columns, rows, cellSize)
             }
         }
         )
