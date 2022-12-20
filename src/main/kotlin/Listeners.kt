@@ -5,6 +5,8 @@ import javax.swing.JButton
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
 import javax.swing.JPanel
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.round
 import kotlin.system.exitProcess
 
@@ -38,8 +40,20 @@ class Listeners {
             if ((releaseX - pressX) == 0 && (releaseY - pressY) == 0) {
                 clickCell(releaseX, releaseY, DrawBoard.board)
             } else {
-                DrawBoard.centerX -= (releaseX - pressX)
-                DrawBoard.centerY -= (releaseY - pressY)
+                DrawBoard.centerX = when {
+                    DrawBoard.centerX - (releaseX - pressX) < DrawBoard.scale/2 ->
+                        DrawBoard.scale/2
+                    DrawBoard.centerX - (releaseX - pressX) > Constants.size -  DrawBoard.scale/2 ->
+                        Constants.size -  DrawBoard.scale/2
+                    else -> DrawBoard.centerX - (releaseX - pressX)
+                }
+                DrawBoard.centerY = when {
+                    DrawBoard.centerY - (releaseY - pressY) < DrawBoard.scale/2 ->
+                        DrawBoard.scale/2
+                    DrawBoard.centerY - (releaseY - pressY) > Constants.size -  DrawBoard.scale/2 ->
+                        Constants.size -  DrawBoard.scale/2
+                    else -> DrawBoard.centerY - (releaseY - pressY)
+                }
             }
         }
     }
@@ -47,10 +61,10 @@ class Listeners {
     val keyboardListener = object : KeyListener {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                37 -> DrawBoard.centerX++
-                38 -> DrawBoard.centerY++
-                39 -> DrawBoard.centerX--
-                40 -> DrawBoard.centerY--
+                37 -> DrawBoard.centerX = min(DrawBoard.centerX+1, Constants.size-DrawBoard.scale/2)
+                38 -> DrawBoard.centerY = min(DrawBoard.centerY+1, Constants.size-DrawBoard.scale/2)
+                39 -> DrawBoard.centerX = max(DrawBoard.centerX-1, DrawBoard.scale/2)
+                40 -> DrawBoard.centerY = max(DrawBoard.centerY-1, DrawBoard.scale/2)
             }
         }
 
@@ -111,8 +125,7 @@ fun mouse(scroll: Int) {
     }
 }
 
-data class Coordinates(val x: Int, val y: Int) {
-}
+data class Coordinates(val x: Int, val y: Int)
 
 fun calculateCell(x: Int, y: Int): Coordinates {
     val cellsDislocationX = round((x.toFloat() - DrawBoard.fieldWidth / 2) / Listeners.cellSize).toInt()
@@ -187,6 +200,7 @@ class Button(field: Field) {
     }
 
     fun addButtons(panel: JPanel) {
+        val a = Listeners()
         val but1 = JButton("Start/Pause")
         val but2 = JButton("Save board")
         val but3 = JButton("Load board")
@@ -195,6 +209,7 @@ class Button(field: Field) {
         but4.addActionListener(actionListenerGenerate)
         but2.addActionListener(actionListenerSave)
         but3.addActionListener(actionListenerLoad)
+        but4.addKeyListener(a.keyboardListener)
         panel.add(but1)
         panel.add(but2)
         panel.add(but3)
