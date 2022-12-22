@@ -5,6 +5,7 @@ import java.lang.IllegalArgumentException
 import java.lang.StringBuilder
 import javax.imageio.ImageIO
 import javax.swing.JFileChooser
+import javax.swing.JOptionPane
 import javax.swing.filechooser.FileNameExtensionFilter
 
 interface Save{
@@ -61,8 +62,8 @@ class LoadTxt: Load {
         if (openDialog == JFileChooser.APPROVE_OPTION) {
             val selectedFile = fileChooser.selectedFile
             val dataInFile = selectedFile.readLines()
-            Constants.birth = dataInFile[0].split(" ").mapNotNull { string -> string.toIntOrNull() }
-            Constants.stayAlive = dataInFile[1].split(" ").mapNotNull { string -> string.toIntOrNull() }
+            Constants.birth = dataInFile[0].split(" ").mapNotNull { string -> string.toIntOrNull() }.toSet()
+            Constants.stayAlive = dataInFile[1].split(" ").mapNotNull { string -> string.toIntOrNull() }.toSet()
             DrawBoard.scale = dataInFile[2].trim().toIntOrNull() ?: throw IllegalArgumentException()
             DrawBoard.centerX = dataInFile[3].trim().toIntOrNull() ?: throw IllegalArgumentException()
             DrawBoard.centerY = dataInFile[4].trim().toIntOrNull() ?: throw IllegalArgumentException()
@@ -94,5 +95,33 @@ class LoadBmp: Load {
                 }
             }
         }
+    }
+}
+fun save() {
+    val answer = JOptionPane.showOptionDialog(
+        null, "How do you want to save the board?", "Save",
+        JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, arrayOf("Text file", "Bitmap file"), "Text file"
+    )
+    if (answer == 1) {
+        val saver = SaveBmp()
+        saver.saveAs()
+    }
+    if (answer == 0 ){
+        val saver = SaveTxt()
+        saver.saveAs()
+    }
+}
+fun load() {
+    val answer = JOptionPane.showOptionDialog(
+        null, "How do you want to load the board?", "Load",
+        JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, arrayOf("Text file", "Bitmap file"), "Text file"
+    )
+    if (answer == 1) {
+        val loader = LoadBmp()
+        loader.loadAs()
+    }
+    if (answer == 0){
+        val loader = LoadTxt()
+        loader.loadAs()
     }
 }

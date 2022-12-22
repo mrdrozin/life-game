@@ -5,8 +5,8 @@ class Constants {
         }
         const val size = 1024
         val range = (1..size)
-        var birth = listOf<Int>(3)
-        var stayAlive = listOf<Int>(2,3)
+        var birth = setOf<Int>(3)
+        var stayAlive = setOf<Int>(2,3)
         var probability = 0.3
     }
 }

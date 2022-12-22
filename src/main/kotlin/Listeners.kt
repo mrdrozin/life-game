@@ -1,7 +1,13 @@
+
+import Listeners.Companion.active
 import java.awt.event.*
 import javax.swing.JButton
+import javax.swing.JCheckBox
+import javax.swing.JFrame
+import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
+import javax.swing.JTabbedPane
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
@@ -10,6 +16,8 @@ import kotlin.system.exitProcess
 class Listeners {
     companion object {
         var cellSize = DrawBoard.fieldWidth / DrawBoard.scale
+        var active = false
+        var n : Int? = 0
     }
 
     var pressX = 0
@@ -24,6 +32,7 @@ class Listeners {
             pressX = pressCoordinate.x
             pressY = pressCoordinate.y
         }
+
         override fun mouseEntered(enter: MouseEvent) {}
         override fun mouseReleased(release: MouseEvent) {
             val releaseCoordinate = calculateCell(release.x, release.y)
@@ -33,17 +42,21 @@ class Listeners {
                 clickCell(releaseX, releaseY, DrawBoard.board)
             } else {
                 DrawBoard.centerX = when {
-                    DrawBoard.centerX - (releaseX - pressX) < DrawBoard.scale/2 ->
-                        DrawBoard.scale/2
-                    DrawBoard.centerX - (releaseX - pressX) > Constants.size -  DrawBoard.scale/2 ->
-                        Constants.size -  DrawBoard.scale/2
+                    DrawBoard.centerX - (releaseX - pressX) < DrawBoard.scale / 2 ->
+                        DrawBoard.scale / 2
+
+                    DrawBoard.centerX - (releaseX - pressX) > Constants.size - DrawBoard.scale / 2 ->
+                        Constants.size - DrawBoard.scale / 2
+
                     else -> DrawBoard.centerX - (releaseX - pressX)
                 }
                 DrawBoard.centerY = when {
-                    DrawBoard.centerY - (releaseY - pressY) < DrawBoard.scale/2 ->
-                        DrawBoard.scale/2
-                    DrawBoard.centerY - (releaseY - pressY) > Constants.size -  DrawBoard.scale/2 ->
-                        Constants.size -  DrawBoard.scale/2
+                    DrawBoard.centerY - (releaseY - pressY) < DrawBoard.scale / 2 ->
+                        DrawBoard.scale / 2
+
+                    DrawBoard.centerY - (releaseY - pressY) > Constants.size - DrawBoard.scale / 2 ->
+                        Constants.size - DrawBoard.scale / 2
+
                     else -> DrawBoard.centerY - (releaseY - pressY)
                 }
             }
@@ -53,10 +66,10 @@ class Listeners {
     val keyboardListener = object : KeyListener {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                37 -> DrawBoard.centerX = min(DrawBoard.centerX+1, Constants.size-DrawBoard.scale/2)
-                38 -> DrawBoard.centerY = min(DrawBoard.centerY+1, Constants.size-DrawBoard.scale/2)
-                39 -> DrawBoard.centerX = max(DrawBoard.centerX-1, DrawBoard.scale/2)
-                40 -> DrawBoard.centerY = max(DrawBoard.centerY-1, DrawBoard.scale/2)
+                37 -> DrawBoard.centerX = min(DrawBoard.centerX + 1, Constants.size - DrawBoard.scale / 2)
+                38 -> DrawBoard.centerY = min(DrawBoard.centerY + 1, Constants.size - DrawBoard.scale / 2)
+                39 -> DrawBoard.centerX = max(DrawBoard.centerX - 1, DrawBoard.scale / 2)
+                40 -> DrawBoard.centerY = max(DrawBoard.centerY - 1, DrawBoard.scale / 2)
             }
         }
 
@@ -73,22 +86,20 @@ class Listeners {
                 JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, arrayOf("Yes", "No"), "No"
             )
             if (answer == 0) {
-                val saver = SaveTxt()
-                saver.saveAs()
+                load()
             }
         }
 
         override fun windowClosing(e: WindowEvent) {
-
             val answer = JOptionPane.showOptionDialog(
-                null, "Do you want to save this board?", "Exit",
+                null, "Do you want to save this board?", "Save",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, arrayOf("Yes", "No"), "No"
             )
-            if (answer == 1) {
+            if (answer == 0) {
+                save()
                 exitProcess(0)
-            } else {
-                val saver = SaveTxt()
-                saver.saveAs()
+            }
+            if (answer == 1) {
                 exitProcess(0)
             }
         }
@@ -109,6 +120,7 @@ class Listeners {
         override fun windowDeactivated(e: WindowEvent?) {
         }
     }
+
 }
 
 fun mouse(scroll: Int) {
@@ -139,36 +151,104 @@ fun clickCell(x: Int, y: Int, board: Field) {
     }
 }
 
+class SettingsMenu() {
+    fun setSettings() {
+        val new = JFrame()
+        val pane = JTabbedPane()
+        val birth = JPanel()
+        val stayAlive = JPanel()
+        val birthBoxes = mutableListOf<JCheckBox>()
+        val stayAliveBoxes = mutableListOf<JCheckBox>()
+        birth.add(JLabel("how many for birth?"))
+        stayAlive.add(JLabel("How many neighbors alive cell needs to stay alive?"))
+        (0..8).forEach {
+            birthBoxes.add(JCheckBox("$it"))
+            stayAliveBoxes.add(JCheckBox("$it"))
+        }
+        Constants.birth.forEach { birthBoxes[it].isSelected = true }
+        Constants.stayAlive.forEach { stayAliveBoxes[it].isSelected = true }
+        pane.addTab("Birth", birth)
+        pane.addTab("Stay alive", stayAlive)
+        birthBoxes.forEach { birth.add(it) }
+        stayAliveBoxes.forEach { stayAlive.add(it) }
+        val birthSubmit = JButton("Submit")
+        val stayAliveSubmit = JButton("Submit")
+        val listener = ActionListener {
+            val birthSet = mutableSetOf<Int>()
+            val staySet = mutableSetOf<Int>()
+            (0..8).forEach {
+                if (birthBoxes[it].isSelected) birthSet.add(it)
+                if (stayAliveBoxes[it].isSelected) staySet.add(it)
+            }
+            Constants.birth = birthSet
+            Constants.stayAlive = staySet
+            new.dispose()
+        }
+        birthSubmit.addActionListener(listener)
+        stayAliveSubmit.addActionListener(listener)
+        birth.add(birthSubmit)
+        stayAlive.add(stayAliveSubmit)
+        new.contentPane.add(pane)
+        new.isVisible = true
+        new.setLocation(200, 200)
+        new.isResizable = false
+        new.pack()
+    }
+    fun makeInputWindow() {
+        Listeners.n = JOptionPane.showInputDialog("How many moves you want to simulate?").trim().toIntOrNull()
+        if (Listeners.n!=null){
+            DrawBoard.board.playNMoves()
+        }
+        if (Listeners.n == null){
+            JOptionPane.showInputDialog("Oops, some mistakes in number of moves")
+        }
+    }
+}
+
+
 class Button(field: Field) {
     private val actionListenerStart = ActionListener {
-        field.nextBoard()
+        if (!active){
+            active = true
+            DrawBoard.board.playGame()
+        } else {
+            active = false
+        }
     }
     private val actionListenerGenerate = ActionListener {
         field.generate()
     }
     private val actionListenerSave = ActionListener {
-        val saver = SaveBmp()
-        saver.saveAs()
+        save()
     }
     private val actionListenerLoad = ActionListener {
-        val loader = LoadBmp()
-        loader.loadAs()
+        load()
     }
 
-    fun addButtons(panel: JPanel) {
-        val a = Listeners()
-        val but1 = JButton("Start/Pause")
-        val but2 = JButton("Save board")
-        val but3 = JButton("Load board")
-        val but4 = JButton("generate")
-        but1.addActionListener(actionListenerStart)
-        but4.addActionListener(actionListenerGenerate)
-        but2.addActionListener(actionListenerSave)
-        but3.addActionListener(actionListenerLoad)
-        but4.addKeyListener(a.keyboardListener)
-        panel.add(but1)
-        panel.add(but2)
-        panel.add(but3)
-        panel.add(but4)
+    fun addButtons(rightPanel: JPanel, bottomPanel: JPanel) {
+        val settings = SettingsMenu()
+        val listeners = Listeners()
+        val buttonStart = JButton("Start/Pause")
+        val buttonSave = JButton("Save board")
+        val buttonLoad = JButton("Load board")
+        val buttonGenerate = JButton("Generate")
+        buttonStart.addActionListener(actionListenerStart)
+        buttonGenerate.addActionListener(actionListenerGenerate)
+        buttonSave.addActionListener(actionListenerSave)
+        buttonLoad.addActionListener(actionListenerLoad)
+        buttonGenerate.addKeyListener(listeners.keyboardListener)
+        rightPanel.add(buttonStart)
+        rightPanel.add(buttonSave)
+        rightPanel.add(buttonLoad)
+        rightPanel.add(buttonGenerate)
+        val buttonSettings = JButton("Settings")
+        val buttonClear = JButton("Clear")
+        val buttonNMoves = JButton("Play N moves")
+        buttonSettings.addActionListener { settings.setSettings() }
+        buttonClear.addActionListener{DrawBoard.board.clear()}
+        buttonNMoves.addActionListener{ settings.makeInputWindow() }
+        bottomPanel.add(buttonNMoves)
+        bottomPanel.add(buttonSettings)
+        bottomPanel.add(buttonClear)
     }
 }

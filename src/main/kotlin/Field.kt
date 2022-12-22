@@ -1,4 +1,5 @@
 import java.lang.StringBuilder
+import kotlin.concurrent.fixedRateTimer
 
 class Field {
     var field: MutableList<MutableList<Cell>> = mutableListOf()
@@ -75,6 +76,29 @@ class Field {
                 } else {
                     field[y][x] = Cell(CONDITION.DEAD)
                 }
+            }
+        }
+    }
+    fun clear(){
+        field = Field().field
+    }
+    fun playGame() {
+        fixedRateTimer(name = "timer",
+            initialDelay = 0, period = 100,daemon = true) {
+            nextBoard()
+            if (!Listeners.active){
+                cancel()
+            }
+        }
+    }
+    fun playNMoves() {
+        fixedRateTimer(name = "timer",
+            initialDelay = 0, period = 100,daemon = true) {
+            if (Listeners.n!! > 0){
+                DrawBoard
+                Listeners.n = Listeners.n!! - 1
+            } else {
+                cancel()
             }
         }
     }
