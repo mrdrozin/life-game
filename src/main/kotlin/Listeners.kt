@@ -1,8 +1,5 @@
 import java.awt.event.*
-import java.lang.IllegalArgumentException
-import java.lang.StringBuilder
 import javax.swing.JButton
-import javax.swing.JFileChooser
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import kotlin.math.max
@@ -20,19 +17,14 @@ class Listeners {
     var releaseX = 0
     var releaseY = 0
     val mouseListener = object : MouseListener {
-        override fun mouseClicked(click: MouseEvent) {
-        }
-
+        override fun mouseClicked(click: MouseEvent) {}
         override fun mouseExited(exit: MouseEvent) {}
         override fun mousePressed(press: MouseEvent) {
             val pressCoordinate = calculateCell(press.x, press.y)
             pressX = pressCoordinate.x
             pressY = pressCoordinate.y
         }
-
-        override fun mouseEntered(enter: MouseEvent) {
-        }
-
+        override fun mouseEntered(enter: MouseEvent) {}
         override fun mouseReleased(release: MouseEvent) {
             val releaseCoordinate = calculateCell(release.x, release.y)
             releaseX = releaseCoordinate.x
@@ -81,7 +73,8 @@ class Listeners {
                 JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, arrayOf("Yes", "No"), "No"
             )
             if (answer == 0) {
-                loadGame()
+                val saver = SaveTxt()
+                saver.saveAs()
             }
         }
 
@@ -94,7 +87,8 @@ class Listeners {
             if (answer == 1) {
                 exitProcess(0)
             } else {
-                saveGame()
+                val saver = SaveTxt()
+                saver.saveAs()
                 exitProcess(0)
             }
         }
@@ -145,46 +139,6 @@ fun clickCell(x: Int, y: Int, board: Field) {
     }
 }
 
-fun saveGame() {
-    val fileChooser = JFileChooser()
-    val openDialog = fileChooser.showOpenDialog(null)
-    if (openDialog == JFileChooser.APPROVE_OPTION) {
-        val selectedFile = fileChooser.selectedFile
-        val savedData = StringBuilder()
-        selectedFile.createNewFile()
-        savedData.append(Constants.birth.joinToString(" ") + "\n")
-        savedData.append(Constants.stayAlive.joinToString(" ") + "\n")
-        savedData.append(DrawBoard.scale.toString() + "\n")
-        savedData.append(DrawBoard.centerX.toString() + "\n")
-        savedData.append(DrawBoard.centerY.toString() + "\n")
-        savedData.append(DrawBoard.board.toString())
-        selectedFile.writeText(savedData.toString())
-    }
-}
-
-fun loadGame() {
-    val fileChooser = JFileChooser()
-    val openDialog = fileChooser.showOpenDialog(null)
-    if (openDialog == JFileChooser.APPROVE_OPTION) {
-        val selectedFile = fileChooser.selectedFile
-        val dataInFile = selectedFile.readLines()
-        Constants.birth = dataInFile[0].split(" ").mapNotNull { string -> string.toIntOrNull() }
-        Constants.stayAlive = dataInFile[1].split(" ").mapNotNull { string -> string.toIntOrNull() }
-        DrawBoard.scale = dataInFile[2].trim().toIntOrNull() ?: throw IllegalArgumentException()
-        DrawBoard.centerX = dataInFile[3].trim().toIntOrNull() ?: throw IllegalArgumentException()
-        DrawBoard.centerY = dataInFile[4].trim().toIntOrNull() ?: throw IllegalArgumentException()
-        val intToCell = mapOf(1 to CONDITION.ALIVE, 0 to CONDITION.DEAD)
-        repeat(Constants.size + 2) {
-            DrawBoard.board.field[it] =
-                dataInFile[it + 5].split(" ").mapNotNull { string -> string.toIntOrNull() }.map { int ->
-                    Cell(
-                        intToCell[int]!!
-                    )
-                }.toMutableList()
-        }
-    }
-}
-
 class Button(field: Field) {
     private val actionListenerStart = ActionListener {
         field.nextBoard()
@@ -193,10 +147,12 @@ class Button(field: Field) {
         field.generate()
     }
     private val actionListenerSave = ActionListener {
-        saveGame()
+        val saver = SaveBmp()
+        saver.saveAs()
     }
     private val actionListenerLoad = ActionListener {
-        loadGame()
+        val loader = LoadBmp()
+        loader.loadAs()
     }
 
     fun addButtons(panel: JPanel) {

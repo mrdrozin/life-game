@@ -11,6 +11,8 @@ import java.awt.Dimension
 import java.awt.GridLayout
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionListener
 import javax.swing.*
 import kotlin.math.ceil
 
@@ -25,6 +27,7 @@ class DrawBoard {
         private const val buttonWidth = 110f
         var fieldWidth = windowWidth - buttonWidth
         var fieldHeight = windowHeight
+        var generation = 0
     }
 
     fun createWindow() = runBlocking(Dispatchers.Swing) {
@@ -40,9 +43,23 @@ class DrawBoard {
                 preferredSize = Dimension(1000, 720)
             }
             val gameField = JPanel(GridLayout(4, 1))
+            val downPanel = JPanel(GridLayout(1,1))
             button.addButtons(gameField)
+            val but = JButton("0")
+            val moveListener = object : MouseMotionListener {
+                override fun mouseDragged(e: MouseEvent?) {
+                }
+
+                override fun mouseMoved(e: MouseEvent) {
+                    val cell = calculateCell(e.x, e.y)
+
+                }
+            }
+            but.addMouseMotionListener(moveListener)
+            downPanel.add(but)
             layer.attachTo(window.contentPane)
             window.contentPane.add(gameField, BorderLayout.EAST)
+            window.contentPane.add(downPanel, BorderLayout.SOUTH)
             layer.needRedraw()
             window.pack()
             window.isVisible = true
