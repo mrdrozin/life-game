@@ -92,7 +92,6 @@ class Listeners {
                 }
 
             }
-            println(DrawBoard.centerX)
         }
 
         override fun keyReleased(e: KeyEvent) {
