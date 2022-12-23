@@ -94,12 +94,13 @@ class Field {
     fun playNMoves() {
         fixedRateTimer(name = "timer",
             initialDelay = 0, period = 100,daemon = true) {
-            if (Listeners.n!! > 0){
-                DrawBoard
-                Listeners.n = Listeners.n!! - 1
+            if (Listeners.n > 0){
+                nextBoard()
+                Listeners.n = Listeners.n - 1
             } else {
                 cancel()
             }
+
         }
     }
 }

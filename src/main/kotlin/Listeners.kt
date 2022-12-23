@@ -17,7 +17,7 @@ class Listeners {
     companion object {
         var cellSize = DrawBoard.fieldWidth / DrawBoard.scale
         var active = false
-        var n : Int? = 0
+        var n : Int = 0
     }
 
     var pressX = 0
@@ -66,10 +66,10 @@ class Listeners {
     val keyboardListener = object : KeyListener {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                37 -> DrawBoard.centerX = min(DrawBoard.centerX + 1, Constants.size - DrawBoard.scale / 2)
-                38 -> DrawBoard.centerY = min(DrawBoard.centerY + 1, Constants.size - DrawBoard.scale / 2)
-                39 -> DrawBoard.centerX = max(DrawBoard.centerX - 1, DrawBoard.scale / 2)
-                40 -> DrawBoard.centerY = max(DrawBoard.centerY - 1, DrawBoard.scale / 2)
+                37 -> DrawBoard.centerX = max(DrawBoard.centerX - 1, DrawBoard.scale / 2)
+                38 -> DrawBoard.centerY = max(DrawBoard.centerY - 1, DrawBoard.scale / 2)
+                39 -> DrawBoard.centerX = min(DrawBoard.centerX + 1, Constants.size - DrawBoard.scale / 2)
+                40 -> DrawBoard.centerY = min(DrawBoard.centerY + 1, Constants.size - DrawBoard.scale / 2)
             }
         }
 
@@ -195,13 +195,22 @@ class SettingsMenu() {
         new.pack()
     }
     fun makeInputWindow() {
-        Listeners.n = JOptionPane.showInputDialog("How many moves you want to simulate?").trim().toIntOrNull()
-        if (Listeners.n!=null){
-            DrawBoard.board.playNMoves()
+        val answer = JOptionPane.showInputDialog("How many moves you want to simulate?")
+        if (answer!=null){
+            val new = answer.trim().toIntOrNull()
+            if (new!=null){
+                active = false
+                Listeners.n = new
+                DrawBoard.board.playNMoves()
+            }
+            if (new == null){
+                JOptionPane.showOptionDialog(
+                    null, "Oops something went wrong in your input!", "Warning",
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, arrayOf("Ok"), "Ok"
+                )
+            }
         }
-        if (Listeners.n == null){
-            JOptionPane.showInputDialog("Oops, some mistakes in number of moves")
-        }
+
     }
 }
 
@@ -209,6 +218,7 @@ class SettingsMenu() {
 class Button(field: Field) {
     private val actionListenerStart = ActionListener {
         if (!active){
+            if (Listeners.n>0) Listeners.n = 0
             active = true
             DrawBoard.board.playGame()
         } else {
@@ -232,23 +242,20 @@ class Button(field: Field) {
         val buttonSave = JButton("Save board")
         val buttonLoad = JButton("Load board")
         val buttonGenerate = JButton("Generate")
+        val eastButtons = listOf(buttonStart, buttonLoad,  buttonSave, buttonGenerate)
         buttonStart.addActionListener(actionListenerStart)
         buttonGenerate.addActionListener(actionListenerGenerate)
         buttonSave.addActionListener(actionListenerSave)
         buttonLoad.addActionListener(actionListenerLoad)
         buttonGenerate.addKeyListener(listeners.keyboardListener)
-        rightPanel.add(buttonStart)
-        rightPanel.add(buttonSave)
-        rightPanel.add(buttonLoad)
-        rightPanel.add(buttonGenerate)
+        eastButtons.forEach { it.addKeyListener(listeners.keyboardListener); rightPanel.add(it) }
         val buttonSettings = JButton("Settings")
         val buttonClear = JButton("Clear")
         val buttonNMoves = JButton("Play N moves")
         buttonSettings.addActionListener { settings.setSettings() }
         buttonClear.addActionListener{DrawBoard.board.clear()}
         buttonNMoves.addActionListener{ settings.makeInputWindow() }
-        bottomPanel.add(buttonNMoves)
-        bottomPanel.add(buttonSettings)
-        bottomPanel.add(buttonClear)
+        val southButtons = listOf(buttonSettings, buttonNMoves, buttonClear)
+        southButtons.forEach { it.addKeyListener(listeners.keyboardListener); bottomPanel.add(it) }
     }
 }
