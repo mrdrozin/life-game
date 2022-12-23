@@ -1,4 +1,6 @@
 
+import Listeners.Companion.StateX
+import Listeners.Companion.StateY
 import Listeners.Companion.active
 import java.awt.event.*
 import javax.swing.JButton
@@ -8,6 +10,8 @@ import javax.swing.JLabel
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
+import javax.swing.SwingConstants
+import kotlin.concurrent.fixedRateTimer
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
@@ -17,7 +21,9 @@ class Listeners {
     companion object {
         var cellSize = DrawBoard.fieldWidth / DrawBoard.scale
         var active = false
-        var n : Int = 0
+        var numberOfMoves : Int = 0
+        var StateX : Int = 0
+        var StateY : Int = 0
     }
 
     var pressX = 0
@@ -25,7 +31,8 @@ class Listeners {
     var releaseX = 0
     var releaseY = 0
     val mouseListener = object : MouseListener {
-        override fun mouseClicked(click: MouseEvent) {}
+        override fun mouseClicked(click: MouseEvent) {
+        }
         override fun mouseExited(exit: MouseEvent) {}
         override fun mousePressed(press: MouseEvent) {
             val pressCoordinate = calculateCell(press.x, press.y)
@@ -66,11 +73,26 @@ class Listeners {
     val keyboardListener = object : KeyListener {
         override fun keyPressed(e: KeyEvent) {
             when (e.keyCode) {
-                37 -> DrawBoard.centerX = max(DrawBoard.centerX - 1, DrawBoard.scale / 2)
-                38 -> DrawBoard.centerY = max(DrawBoard.centerY - 1, DrawBoard.scale / 2)
-                39 -> DrawBoard.centerX = min(DrawBoard.centerX + 1, Constants.size - DrawBoard.scale / 2)
-                40 -> DrawBoard.centerY = min(DrawBoard.centerY + 1, Constants.size - DrawBoard.scale / 2)
+                37 -> {
+                    if (DrawBoard.centerX > DrawBoard.scale/2) StateX-=1
+                    DrawBoard.centerX = max(DrawBoard.centerX - 1, DrawBoard.scale / 2)
+                }
+
+                38 -> {
+                    if (DrawBoard.centerY > DrawBoard.scale/2) StateY-=1
+                    DrawBoard.centerY = max(DrawBoard.centerY - 1, DrawBoard.scale / 2)
+                }
+                39 -> {
+                    if (DrawBoard.centerX < Constants.size - DrawBoard.scale / 2) StateX+=1
+                    DrawBoard.centerX = min(DrawBoard.centerX + 1, Constants.size - DrawBoard.scale / 2)
+                }
+                40 -> {
+                    if (DrawBoard.centerY < Constants.size - DrawBoard.scale / 2) StateY+=1
+                    DrawBoard.centerY = min(DrawBoard.centerY + 1, Constants.size - DrawBoard.scale / 2)
+                }
+
             }
+            println(DrawBoard.centerX)
         }
 
         override fun keyReleased(e: KeyEvent) {
@@ -120,7 +142,16 @@ class Listeners {
         override fun windowDeactivated(e: WindowEvent?) {
         }
     }
+    val mouseMotionListener = object : MouseMotionListener{
+        override fun mouseDragged(e: MouseEvent?) {
+        }
 
+        override fun mouseMoved(e: MouseEvent) {
+            StateX = calculateCell(e.x, e.y).x
+            StateY = calculateCell(e.x, e.y).y
+        }
+
+    }
 }
 
 fun mouse(scroll: Int) {
@@ -151,7 +182,7 @@ fun clickCell(x: Int, y: Int, board: Field) {
     }
 }
 
-class SettingsMenu() {
+class SettingsMenu {
     fun setSettings() {
         val new = JFrame()
         val pane = JTabbedPane()
@@ -197,13 +228,13 @@ class SettingsMenu() {
     fun makeInputWindow() {
         val answer = JOptionPane.showInputDialog("How many moves you want to simulate?")
         if (answer!=null){
-            val new = answer.trim().toIntOrNull()
-            if (new!=null){
+            val processed = answer.trim().toIntOrNull()
+            if (processed!=null){
                 active = false
-                Listeners.n = new
+                Listeners.numberOfMoves = processed
                 DrawBoard.board.playNMoves()
             }
-            if (new == null){
+            if (processed == null){
                 JOptionPane.showOptionDialog(
                     null, "Oops something went wrong in your input!", "Warning",
                     JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, arrayOf("Ok"), "Ok"
@@ -212,13 +243,23 @@ class SettingsMenu() {
         }
 
     }
+    fun cellGeneration(){
+        fixedRateTimer(name = "timer",
+            initialDelay = 0, period = 1,daemon = true) {
+            DrawBoard.generation = DrawBoard.board.field[StateY][StateX].generation
+            Button.label.text = "Cell ($StateX,$StateY) generation: ${DrawBoard.generation}"
+        }
+    }
 }
 
 
 class Button(field: Field) {
+    companion object{
+        val label = JLabel("Cell generation: ${DrawBoard.generation}", SwingConstants.CENTER)
+    }
     private val actionListenerStart = ActionListener {
         if (!active){
-            if (Listeners.n>0) Listeners.n = 0
+            if (Listeners.numberOfMoves>0) Listeners.numberOfMoves = 0
             active = true
             DrawBoard.board.playGame()
         } else {
@@ -234,10 +275,9 @@ class Button(field: Field) {
     private val actionListenerLoad = ActionListener {
         load()
     }
-
-    fun addButtons(rightPanel: JPanel, bottomPanel: JPanel) {
-        val settings = SettingsMenu()
-        val listeners = Listeners()
+    private val settings = SettingsMenu()
+    private val listeners = Listeners()
+    fun addEastButtons(eastPanel: JPanel) {
         val buttonStart = JButton("Start/Pause")
         val buttonSave = JButton("Save board")
         val buttonLoad = JButton("Load board")
@@ -248,14 +288,19 @@ class Button(field: Field) {
         buttonSave.addActionListener(actionListenerSave)
         buttonLoad.addActionListener(actionListenerLoad)
         buttonGenerate.addKeyListener(listeners.keyboardListener)
-        eastButtons.forEach { it.addKeyListener(listeners.keyboardListener); rightPanel.add(it) }
+        eastButtons.forEach { it.addKeyListener(listeners.keyboardListener); eastPanel.add(it) }
+
+    }
+    fun addSouthButtons(northPanel: JPanel){
         val buttonSettings = JButton("Settings")
         val buttonClear = JButton("Clear")
         val buttonNMoves = JButton("Play N moves")
         buttonSettings.addActionListener { settings.setSettings() }
         buttonClear.addActionListener{DrawBoard.board.clear()}
         buttonNMoves.addActionListener{ settings.makeInputWindow() }
-        val southButtons = listOf(buttonSettings, buttonNMoves, buttonClear)
-        southButtons.forEach { it.addKeyListener(listeners.keyboardListener); bottomPanel.add(it) }
+        val northButtons = listOf(buttonSettings, buttonNMoves, buttonClear)
+        northButtons.forEach { it.addKeyListener(listeners.keyboardListener); northPanel.add(it) }
+        settings.cellGeneration()
+        northPanel.add(label)
     }
 }

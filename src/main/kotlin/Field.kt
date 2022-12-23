@@ -57,7 +57,7 @@ class Field {
         return newCell
     }
 
-    fun nextBoard(){
+    private fun nextBoard(){
         val newBoard = Field()
         Constants.range.forEach { y ->
             Constants.range.forEach { x ->
@@ -94,9 +94,9 @@ class Field {
     fun playNMoves() {
         fixedRateTimer(name = "timer",
             initialDelay = 0, period = 100,daemon = true) {
-            if (Listeners.n > 0){
+            if (Listeners.numberOfMoves > 0){
                 nextBoard()
-                Listeners.n = Listeners.n - 1
+                Listeners.numberOfMoves = Listeners.numberOfMoves - 1
             } else {
                 cancel()
             }

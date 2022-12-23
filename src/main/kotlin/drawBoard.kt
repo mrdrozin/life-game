@@ -41,17 +41,19 @@ class DrawBoard {
                 defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
                 preferredSize = Dimension(1000, 720)
             }
-            val rightPanel = JPanel(GridLayout(4, 1))
-            val bottomPanel = JPanel(GridLayout(1, 1))
-            button.addButtons(rightPanel, bottomPanel)
+            val eastPanel = JPanel(GridLayout(4, 1))
+            val northPanel = JPanel(GridLayout(1, 1))
+            button.addEastButtons(eastPanel)
+            button.addSouthButtons(northPanel)
             layer.attachTo(window.contentPane)
-            window.contentPane.add(rightPanel, BorderLayout.EAST)
-            window.contentPane.add(bottomPanel, BorderLayout.NORTH)
+            window.contentPane.add(eastPanel, BorderLayout.EAST)
+            window.contentPane.add(northPanel, BorderLayout.NORTH)
             layer.needRedraw()
             window.pack()
             window.isVisible = true
             window.isResizable = true
             fieldRender(layer)
+            layer.addMouseMotionListener(listeners.mouseMotionListener)
             window.addComponentListener(componentListener)
             window.addWindowListener(listeners.windowListener)
         }
